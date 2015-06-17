@@ -1,2 +1,6 @@
 # ci
-Jenkins scripts, perf tests, tools etc.
+
+This is a place to store continuous integration related code and resources:
+
+Performance test scripts, Jenkins scripts, etc.
+
