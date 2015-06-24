@@ -1,0 +1,9 @@
+
+WebLogicExamples/wldfdemo-wlnav.war
+opencms-9.0.1.war
+opencms-core-build_9_0_1-src -source true
+BradApp/jee-example-app/target/jee-example-app-1.0.0.ear
+OracleSampleApps/dizzyworld.ear
+
+WebLogic-MedRec-src -source true
+WInS_Demos-src -source true
