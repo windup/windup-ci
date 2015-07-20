@@ -1,2 +1,5 @@
 run-all/windup-cli-0.6.8/
 run-all/target/
+run-windup-on-example-app/download
+*.iml
+*.~
