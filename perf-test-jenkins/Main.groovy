@@ -21,8 +21,9 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-
 import java.text.SimpleDateFormat
+import static com.xlson.groovycsv.CsvParser.parseCsv
+
 
 @GrabConfig(systemClassLoader = true)
 @Grab('org.postgresql:postgresql:9.4-1201-jdbc41')
@@ -169,23 +170,28 @@ private String runTests(File windup, String name, File inputFile) {
         detailedStatsFile.eachLine { line, number ->
             if (number == 1)
                 return
-            //Type~Number Of Executions~Total Milliseconds~Milliseconds per execution
-            def match = line =~ /(.*?)~(.*?)~(.*?)~(.*)/;
-            if (match.matches()) {
-                def detailedStatName = match.group(1);
-                def numberOfExecs = Integer.valueOf(match.group(2));
-                def totalMillis = Integer.valueOf(match.group(3));
-                //println("Name: " + detailedStatName + " # " + numberOfExecs + " totalMillis: " + totalMillis);
-                def detailedStatRow = detailedStats[detailedStatName];
-                if (!detailedStatRow) {
-                    detailedStatRow = [:];
-                    detailedStatRow["executions"] = numberOfExecs;
-                    detailedStatRow["total"] = totalMillis;
-                    detailedStats[detailedStatName] = detailedStatRow;
-                } else {
-                    detailedStatRow["executions"] = detailedStatRow["executions"] + numberOfExecs;
-                    detailedStatRow["total"] = detailedStatRow["total"] + totalMillis;
-                }
+            // Number Of Executions, Total Milliseconds, Milliseconds per execution, "Type"
+            def match = line =~ /([^,]*?),\s*([^,]*?),\s*([^,]*?),\s*(?:([^",]+)|(?:"([^"]+(?:\\")?)+"))$/; //"
+            
+            if (!match.matches())
+                continue;
+                
+            def numberOfExecs = Integer.valueOf(match.group(1));
+            def totalMillis = Integer.valueOf(match.group(2));
+            def detailedStatName = match.group(4);
+            if (detailedStatName == null)
+                detailedStatName = match.group(5);
+
+            //println("Name: " + detailedStatName + " # " + numberOfExecs + " totalMillis: " + totalMillis);
+            def detailedStatRow = detailedStats[detailedStatName];
+            if (!detailedStatRow) {
+                detailedStatRow = [:];
+                detailedStatRow["executions"] = numberOfExecs;
+                detailedStatRow["total"] = totalMillis;
+                detailedStats[detailedStatName] = detailedStatRow;
+            } else {
+                detailedStatRow["executions"] = detailedStatRow["executions"] + numberOfExecs;
+                detailedStatRow["total"] = detailedStatRow["total"] + totalMillis;
             }
         }
 
