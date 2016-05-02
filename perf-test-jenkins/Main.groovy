@@ -169,9 +169,9 @@ private String runTests(File windup, String name, File inputFile) {
         File detailedStatsFile = new File(reportDir, "stats/detailed_stats.csv");
         detailedStatsFile.eachLine { line, number ->
             if (number == 1)
-                return
+                return;
             // Number Of Executions, Total Milliseconds, Milliseconds per execution, "Type"
-            def match = line =~ /([^,]*?),\s*([^,]*?),\s*([^,]*?),\s*(?:([^",]+)|(?:"([^"]+(?:\\")?)+"))$/; //"
+            def match = line =~ /([^,]*?),\s*([^,]*?),\s*([^,]*?),\s*(?:([^",]+)|(?:"((?:[^\\"]++(?:\\")?)++)"))$/; //"
             
             if (!match.matches())
                 continue;
@@ -180,7 +180,7 @@ private String runTests(File windup, String name, File inputFile) {
             def totalMillis = Integer.valueOf(match.group(2));
             def detailedStatName = match.group(4);
             if (detailedStatName == null)
-                detailedStatName = match.group(5);
+                detailedStatName = match.group(5).replaceAll('\"','"');
 
             //println("Name: " + detailedStatName + " # " + numberOfExecs + " totalMillis: " + totalMillis);
             def detailedStatRow = detailedStats[detailedStatName];
