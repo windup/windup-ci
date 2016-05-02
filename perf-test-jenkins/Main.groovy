@@ -171,6 +171,8 @@ private String runTests(File windup, String name, File inputFile) {
             if (number == 1)
                 return;
             // Number Of Executions, Total Milliseconds, Milliseconds per execution, "Type"
+            // See http://fiddle.re/2mm08a for a regex test.
+            // TODO: Switch to Commons-CSV http://www.groovy-tutorial.org/basic-csv/#_reading_a_csv
             def match = line =~ /([^,]*?),\s*([^,]*?),\s*([^,]*?),\s*(?:([^",]+)|(?:"((?:[^\\"]++(?:\\")?)++)"))$/; //"
             
             if (!match.matches())
