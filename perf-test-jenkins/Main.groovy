@@ -1,4 +1,6 @@
-#!/usr/bin/env groovy
+#!/bin/bash
+//usr/bin/env groovy  -cp groovy/csvcompare-0.0.1-SNAPSHOT.jar "$0" $@; exit $?
+
 import com.google.api.client.auth.oauth2.Credential
 import com.google.api.client.extensions.java6.auth.oauth2.AbstractPromptReceiver
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp
@@ -20,43 +22,55 @@ import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 
+import java.text.SimpleDateFormat
+
 @GrabConfig(systemClassLoader = true)
 @Grab('org.postgresql:postgresql:9.4-1201-jdbc41')
 @Grab('com.google.oauth-client:google-oauth-client:1.20.0')
 @Grab('com.google.apis:google-api-services-oauth2:v2-rev88-1.20.0')
-@Grab('com.google.gdata:core:1.47.1')                                                                                                                                                                                                                                           
-@Grab('com.google.http-client:google-http-client-jackson2:1.15.0-rc')                                                                                                                                                                                                           
-                                                                                                                                                                                                                                                                                
-@Field                                                                                                                                                                                                                                                                          
-final int NUMBER_OF_RUNS = 5;                                                                                                                                                                                                                                                   
-                                                                                                                                                                                                                                                                                
-Class.forName("org.postgresql.Driver");                                                                                                                                                                                                                                         
-                                                                                                                                                                                                                                                                                
-@Field                                                                                                                                                                                                                                                                          
-String USER_ID = "windupdocs@gmail.com";                                                                                                                                                                                                                                        
-                                                                                                                                                                                                                                                                                
-@Field                                                                                                                                                                                                                                                                          
-File SCRIPT_DIR = new File(getClass().protectionDomain.codeSource.location.path).parentFile;                                                                                                                                                                                    
-                                                                                                                                                                                                                                                                                
-@Field                                                                                                                                                                                                                                                                          
-File WINDUP_OFFLINE = new File(SCRIPT_DIR, "windup-offline.zip");                                                                                                                                                                                                               
-                                                                                                                                                                                                                                                                                
-@Field                                                                                                                                                                                                                                                                          
-File WINDUP_UNZIPPED_FOLDER = new File(SCRIPT_DIR, "windup");                                                                                                                                                                                                                   
-                                                                                                                                                                                                                                                                                
-deltree = {f ->                                                                                                                                                                                                                                                                 
-    if (f.directory) f.eachFile {deltree(it)}                                                                                                                                                                                                                                   
-    f.delete()                                                                                                                                                                                                                                                                  
-}                                                                                                                                                                                                                                                                               
-deltree(WINDUP_UNZIPPED_FOLDER);                                                                                                                                                                                                                                                
-                                                                                                                                                                                                                                                                                
-WINDUP_UNZIPPED_FOLDER.mkdirs();                                                                                                                                                                                                                                                
-                                                                                                                                                                                                                                                                                
-// unzip windup                                                                                                                                                                                                                                                                 
-unzipP = "unzip ${WINDUP_OFFLINE.toString()} -d ${WINDUP_UNZIPPED_FOLDER.toString()}".execute();                                                                                                                                                                                
-unzipP.consumeProcessOutput ();                                                                                                                                                                                                                                                 
-unzipP.consumeProcessErrorStream(System.out);                                                                                                                                                                                                                                   
-unzipP.waitFor();                                                                                                                                                                                                                                                               
+@Grab('com.google.gdata:core:1.47.1')
+@Grab('com.google.http-client:google-http-client-jackson2:1.15.0-rc')
+
+@Field
+final String FILENAME_DATE_FORMAT = "yyyy_MM_dd_HHmm";
+
+@Field
+final String currentDateFormattedForFilename = new SimpleDateFormat(FILENAME_DATE_FORMAT).format(new Date());
+
+@Field
+final int NUMBER_OF_RUNS = 1;
+
+// The maximum number of standard deviations from the mean
+@Field
+final double STANDARD_DEVIATION_ERROR_THRESHOLD = 2.0;
+
+Class.forName("org.postgresql.Driver");
+
+@Field
+String USER_ID = "windupdocs@gmail.com";
+
+@Field
+File SCRIPT_DIR = new File(getClass().protectionDomain.codeSource.location.path).parentFile;
+
+@Field
+File WINDUP_OFFLINE = new File(SCRIPT_DIR, "windup-offline.zip");
+
+@Field
+File WINDUP_UNZIPPED_FOLDER = new File(SCRIPT_DIR, "windup");
+
+deltree = {f ->
+    if (f.directory) f.eachFile {deltree(it)}
+    f.delete()
+}
+deltree(WINDUP_UNZIPPED_FOLDER);
+
+WINDUP_UNZIPPED_FOLDER.mkdirs();
+
+// unzip windup
+unzipP = "unzip ${WINDUP_OFFLINE.toString()} -d ${WINDUP_UNZIPPED_FOLDER.toString()}".execute();
+unzipP.consumeProcessOutput ();
+unzipP.consumeProcessErrorStream(System.out);
+unzipP.waitFor();
 
 File WINDUP_BIN;
 WINDUP_UNZIPPED_FOLDER.eachFileRecurse {
@@ -69,35 +83,72 @@ println "Windup script: " + WINDUP_BIN;
 
 // Run windup on jee-test
 @Field
-File REPORT_BASE_DIR = new File(SCRIPT_DIR, "test-output");
+File REPORT_BASE_DIR = new File("/opt/data/testapps_output");
 deltree(REPORT_BASE_DIR);
 REPORT_BASE_DIR.mkdirs();
 
-def TEST_FILES = new File(SCRIPT_DIR, "test-files");
+// This will contain the exported csv file and a rule provider report
+@Field
+File SUMMARY_OUTPUT_DIR = new File("/opt/data/test_output_summaries", currentDateFormattedForFilename);
+deltree(SUMMARY_OUTPUT_DIR);
+SUMMARY_OUTPUT_DIR.mkdirs();
+
+def TEST_FILES = new File("/opt/data/testapps");
+
+String results = "";
 
 def JEE_TEST_NAME = "jee-example";
-def JEE_TEST_FILE = new File(TEST_FILES, "jee-example-app-1.0.0.ear");
-runTests(WINDUP_BIN, JEE_TEST_NAME, JEE_TEST_FILE);
+def JEE_TEST_FILE = new File(TEST_FILES, "other/jee-example-app-1.0.0.ear");
+results += runTests(WINDUP_BIN, JEE_TEST_NAME, JEE_TEST_FILE);
 
 // Run windup on hibernate example file
 def HIBERNATE_TEST_NAME = "hibernate-tutorial-web";
-def HIBERNATE_TEST_FILE = new File(TEST_FILES, "hibernate-tutorial-web-3.3.2.GA.war");
-runTests(WINDUP_BIN, HIBERNATE_TEST_NAME, HIBERNATE_TEST_FILE);
+def HIBERNATE_TEST_FILE = new File(TEST_FILES, "other/hibernate-tutorial-web-3.3.2.GA.war");
+results += runTests(WINDUP_BIN, HIBERNATE_TEST_NAME, HIBERNATE_TEST_FILE);
 
+results += runTests(WINDUP_BIN, "badly_named_app", new File(TEST_FILES, "other/badly_named_app"));
+results += runTests(WINDUP_BIN, "drgo01.ear", new File(TEST_FILES, "other/drgo01.ear"));
+results += runTests(WINDUP_BIN, "travelio.ear", new File(TEST_FILES, "other/travelio.ear"));
+results += runTests(WINDUP_BIN, "ClfySmartClient.ear", new File(TEST_FILES, "att/ClfySmartClient.ear"));
+results += runTests(WINDUP_BIN, "ClfyAgent.ear", new File(TEST_FILES, "att/ClfyAgent.ear"));
+results += runTests(WINDUP_BIN, "PLUM_22197_ACSI_PROD_05_16_2014.ear", new File(TEST_FILES, "att/PLUM_22197_ACSI_PROD_05_16_2014.ear"));
+results += runTests(WINDUP_BIN, "PassCodeReset.ear", new File(TEST_FILES, "att/PassCodeReset.ear"));
+results += runTests(WINDUP_BIN, "ViewIT.war", new File(TEST_FILES, "att/ViewIT.war"));
+results += runTests(WINDUP_BIN, "aps.ear", new File(TEST_FILES, "att/aps.ear"));
+results += runTests(WINDUP_BIN, "phoenix-1410.ear", new File(TEST_FILES, "att/phoenix-1410.ear"));
+results += runTests(WINDUP_BIN, "FKD2.ear", new File(TEST_FILES, "Lantik/FKD2.ear"));
+results += runTests(WINDUP_BIN, "GW03.ear", new File(TEST_FILES, "Lantik/GW03.ear"));
+results += runTests(WINDUP_BIN, "drswpc53.ear", new File(TEST_FILES, "Allianz/drswpc53.ear"));
 
-private void runTests(File windup, String name, File inputFile) {
+if (results != null && results.trim().length() > 0) {
+    println("================================");
+    println("");
+    println("ERROR:: " + results);
+    println("");
+    println("================================");
+    System.exit(1);
+}
+
+private String runTests(File windup, String name, File inputFile) {
     println("Running: " + NUMBER_OF_RUNS + " on input file: " + inputFile);
+    String result = "";
     long totalTime = 0;
 
     for (int i = 0; i < NUMBER_OF_RUNS; i++) {
         File reportDir = new File(REPORT_BASE_DIR, name + "-" + (i+1));
         reportDir.mkdirs();
 
-        String command = "${windup.getAbsolutePath()} --input ${inputFile.getAbsolutePath()} --output ${reportDir.getAbsolutePath()} --overwrite";
+        String command = "${windup.getAbsolutePath()} --input ${inputFile.getAbsolutePath()} --output ${reportDir.getAbsolutePath()} --overwrite --batchMode --target eap --exportCSV --offline";
         long startTime = System.currentTimeMillis();
-        def windupProc = command.execute();
+
+        def env = [:];
+        env.putAll(System.getenv());
+        env.put("MAX_MEMORY", "8192m");
+
+        def windupProc = command.execute(env.collect { k, v -> "$k=$v" }, new File("."));
         windupProc.consumeProcessOutput();
         windupProc.waitFor();
+
         long endTime = System.currentTimeMillis();
         totalTime += (endTime - startTime);
     }
@@ -189,13 +240,86 @@ private void runTests(File windup, String name, File inputFile) {
                 }
             }
         };
+        File appSummaryDirectory = new File(SUMMARY_OUTPUT_DIR, name);
+        appSummaryDirectory.mkdirs();
+
+        // copy a couple of summary files to the summary folder
+        // report dir reportDir
+        for (File f : reportDir.listFiles()) {
+            if (f.getName().endsWith(".csv")) {
+                File outFile = new File(appSummaryDirectory, f.getName());
+                outFile << f.text;
+            }
+        }
+
+        // Find the immediate predecessor to this one
+        File previousRuleSummariesDirectory = new File(getPreviousRuleSummariesDirectory(), name);
+
+        String csvComparisonResult = CSVCompare.compare(previousRuleSummariesDirectory, appSummaryDirectory);
+        if (csvComparisonResult != null && csvComparisonResult.length() > 0) {
+            result += "Application: " + name + " returned differences:\n" + csvComparisonResult;
+            result += "\n";
+        }
+
+        // copy the rule providers report
+        File ruleProviderReport = new File(reportDir, "reports/windup_ruleproviders.html");
+        if (!ruleProviderReport.exists()) {
+            result += "Application: " + name + " is missing the rule provider report!";
+        } else {
+            File newRuleProviderReport = new File(appSummaryDirectory, "windup_ruleproviders.html");
+            newRuleProviderReport << ruleProviderReport.text
+
+            def failedItems = RuleProviderReportUtil.listFailedRules(newRuleProviderReport.toString());
+            failedItems.each {
+                result += "On application: " + name + ", Rule: " + it.ruleID + " failed to execute!\n";
+            }
+
+            File previousRuleProviderReport = new File(previousRuleSummariesDirectory, "windup_ruleproviders.html");
+            if (!previousRuleProviderReport.exists()) {
+                println "No previous rule provider report is available for comparisong for application: " + name;
+            } else {
+                def diffs = RuleProviderReportUtil.findDifferences(previousRuleProviderReport.toString(), newRuleProviderReport.toString());
+                if (!diffs.onlyInPrevious.isEmpty() || !diffs.onlyInNew.isEmpty()) {
+                    println "=======================";
+                    println " Differences in rule executed vs the previous run for " + name + ":";
+
+                    if (!diffs.onlyInPrevious.isEmpty()) {
+                        println "Only in Previous File: ";
+
+                        diffs.onlyInPrevious.each {
+                            println it.ruleID;
+                        }
+                        println "";
+                    }
+
+                    if (!diffs.onlyInNew.isEmpty()) {
+                        println "Only in New File: ";
+
+                        diffs.onlyInNew.each {
+                            println it.ruleID;
+                        }
+                    }
+                    println "=======================";
+                }
+            }
+        }
     }
 
     // log these detailed stats
-    logResults(name, averageTimeMillis, detailedStats, ruleStats, phaseStats);
+    result += logResults(name, averageTimeMillis, detailedStats, ruleStats, phaseStats);
+    return result;
 }
 
-private void logResults(String name, long averageTotalMillis, Map detailedStats, Map ruleStats, Map phaseStats) {
+private File getPreviousRuleSummariesDirectory() {
+        File parentDir = SUMMARY_OUTPUT_DIR.getAbsoluteFile().getParentFile();
+        List<File> allSummaryDirectories = new ArrayList<>();
+        allSummaryDirectories.addAll(parentDir.listFiles());
+        allSummaryDirectories.sort();
+        return allSummaryDirectories[-2];
+}
+
+private String logResults(String name, long averageTotalMillis, Map detailedStats, Map ruleStats, Map phaseStats) {
+    String result = "";
     Connection connection = DriverManager.getConnection("jdbc:postgresql://localhost/perftest", "perftest", "");
     long perfTestID = 0;
     try {
@@ -215,6 +339,30 @@ private void logResults(String name, long averageTotalMillis, Map detailedStats,
             pstmt.close();
         }
 
+        // Get previous average and standard deviation
+        String getAvgAndStdevSql = "select avg(average_time_per_run),stddev_pop(average_time_per_run) from performance_test where name = ?";
+        PreparedStatement getAvgStatement = connection.prepareStatement(getAvgAndStdevSql);
+        try {
+            getAvgStatement.setString(1, name);
+            ResultSet rs = getAvgStatement.executeQuery();
+            rs.next();
+            double previousAverageSeconds = rs.getDouble(1);
+            double previousStandardDeviation = rs.getDouble(2);
+            
+            double diffFromAverage = Math.abs((averageTotalMillis/1000) - previousAverageSeconds);
+            double maxDiff = (double)STANDARD_DEVIATION_ERROR_THRESHOLD * previousStandardDeviation;
+            if (diffFromAverage > maxDiff) {
+                result = "Performance out of spec for: " + name + ", " + diffFromAverage + 
+                         " from average, but the the threshold (" + STANDARD_DEVIATION_ERROR_THRESHOLD + "*" + previousStandardDeviation + ") is: " + 
+                         maxDiff + " (Previous Average: " + previousAverageSeconds + ", StdDev: " + previousStandardDeviation + 
+                         ", Current Runtime: " + (averageTotalMillis/1000) + ")\n";
+            }
+
+        } finally {
+            getAvgStatement.close();
+        }
+
+
         // insert detailed stats
         for (def row : detailedStats) {
             String sql = "insert into detailed_stats (performance_test_id, name, number_of_executions, total_time_taken, average_time_taken) values (?, ?, ?, ?, ?)";
@@ -223,7 +371,8 @@ private void logResults(String name, long averageTotalMillis, Map detailedStats,
             insert.setString(2, row.key);
             insert.setInt(3, row.value["executions"]);
             insert.setInt(4, row.value["total"]);
-            insert.setDouble(5, (row.value["total"]/row.value["executions"]).doubleValue());
+            double timePerExec = row.value["total"] == 0 ? 0 : (row.value["total"]/row.value["executions"]).doubleValue();
+            insert.setDouble(5, timePerExec);
             insert.executeUpdate();
         }
 
@@ -233,7 +382,8 @@ private void logResults(String name, long averageTotalMillis, Map detailedStats,
             PreparedStatement insert = connection.prepareStatement(sql);
             insert.setLong(1, perfTestID);
             insert.setString(2, row.key);
-            insert.setDouble(3, (row.value["total"]/row.value["executions"]).doubleValue());
+            double timePerExec = row.value["total"] == 0 ? 0 : (row.value["total"]/row.value["executions"]).doubleValue();
+            insert.setDouble(3, timePerExec);
             insert.executeUpdate();
         }
 
@@ -243,7 +393,8 @@ private void logResults(String name, long averageTotalMillis, Map detailedStats,
             PreparedStatement insert = connection.prepareStatement(sql);
             insert.setLong(1, perfTestID);
             insert.setString(2, row.key);
-            insert.setDouble(3, (row.value["total"]/row.value["executions"]).doubleValue());
+            double timePerExec = row.value["total"] == 0 ? 0 : (row.value["total"]/row.value["executions"]).doubleValue();
+            insert.setDouble(3, timePerExec);
             insert.executeUpdate();
         }
     } finally {
@@ -251,6 +402,7 @@ private void logResults(String name, long averageTotalMillis, Map detailedStats,
     }
 
     uploadToGoogle(name, averageTotalMillis, detailedStats, ruleStats, phaseStats);
+    return result;
 }
 
 @Field
@@ -319,14 +471,16 @@ private void uploadToGoogle(String name, long averageTotalMillis, Map detailedSt
     def byRuleRow = new LinkedHashMap();
     byRuleRow['Date'] = dateFormatted;
     for (def e : ruleStats) {
-        byRuleRow[e.key] = String.valueOf((e.value["total"] / e.value["executions"]).doubleValue());
+        double timePerExec = e.value["total"] == 0 ? 0 : (e.value["total"]/e.value["executions"]).doubleValue();
+        byRuleRow[e.key] = String.valueOf(timePerExec);
     }
     updateWorksheet(service, byRuleProviderWorksheet, byRuleRow);
 
     def byPhaseRow = new LinkedHashMap();
     byPhaseRow['Date'] = dateFormatted;
     for (def e : phaseStats) {
-        byPhaseRow[e.key] = String.valueOf((e.value["total"] / e.value["executions"]).doubleValue());
+        double timePerExec = e.value["total"] == 0 ? 0 : (e.value["total"]/e.value["executions"]).doubleValue();
+        byPhaseRow[e.key] = String.valueOf(timePerExec);
     }
     updateWorksheet(service, byPhaseWorksheet, byPhaseRow);
 }
@@ -452,4 +606,4 @@ private Credential authorize(HttpTransport transport, JsonFactory jsonFactory) {
         clientSecretsIS.close();
     }
 
-
+}
