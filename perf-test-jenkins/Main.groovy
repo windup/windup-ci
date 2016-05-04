@@ -213,7 +213,7 @@ private String runTests(File windup, String name, File inputFile) {
                 def match = line =~ /(.*?): (.*?) ms .*/;
                 if (match.matches()) {
                     def statName = match.group(1);
-                    def totalMillis = Integer.valueOf(match.group(2));
+                    def totalMillis = Integer.valueOf(match.group(2)) * 1000;
                     def row = ruleStats[statName];
                     if (!row) {
                         row = [:];
@@ -234,7 +234,7 @@ private String runTests(File windup, String name, File inputFile) {
                     if (statName.indexOf(".") != -1) {
                         statName = statName.substring(statName.lastIndexOf(".")+1);
                     }
-                    def totalMillis = Integer.valueOf(match.group(2));
+                    def totalMillis = Integer.valueOf(match.group(2)) * 1000;
                     def row = phaseStats[statName];
                     if (!row) {
                         row = [:];
