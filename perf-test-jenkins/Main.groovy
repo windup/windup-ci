@@ -22,7 +22,7 @@ import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.text.SimpleDateFormat
-import static com.xlson.groovycsv.CsvParser.parseCsv
+//import static com.xlson.groovycsv.CsvParser.parseCsv
 
 
 @GrabConfig(systemClassLoader = true)
@@ -176,10 +176,10 @@ private String runTests(File windup, String name, File inputFile) {
             def match = line =~ /([^,]*?),\s*([^,]*?),\s*([^,]*?),\s*(?:([^",]+)|(?:"((?:[^\\"]++(?:\\")?)++)"))$/; //"
             
             if (!match.matches())
-                continue;
+                return;
                 
-            def numberOfExecs = Integer.valueOf(match.group(1));
-            def totalMillis = Integer.valueOf(match.group(2));
+            def numberOfExecs = Integer.valueOf(match.group(1).trim());
+            def totalMillis = Integer.valueOf(match.group(2).trim());
             def detailedStatName = match.group(4);
             if (detailedStatName == null)
                 detailedStatName = match.group(5).replaceAll('\"','"');
