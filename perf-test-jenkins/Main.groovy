@@ -1,4 +1,3 @@
-cat Main.groovy
 #!/bin/bash
 //usr/bin/env groovy  -cp groovy/csvcompare-0.0.1-SNAPSHOT.jar "$0" $@; exit $?
 
@@ -616,4 +615,3 @@ private Credential authorize(HttpTransport transport, JsonFactory jsonFactory) {
     }
 
 }
-[root@jsightle-windup-jenkins perftest]# 
