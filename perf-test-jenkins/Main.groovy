@@ -1,3 +1,4 @@
+cat Main.groovy
 #!/bin/bash
 //usr/bin/env groovy  -cp groovy/csvcompare-0.0.1-SNAPSHOT.jar "$0" $@; exit $?
 
@@ -210,10 +211,10 @@ private String runTests(File windup, String name, File inputFile) {
                 return;
 
             if (state == "ruleExecution") {
-                def match = line =~ /(.*?): (.*?) ms .*/;
+                def match = line =~ /\s*(.*?), (.*)/;
                 if (match.matches()) {
-                    def statName = match.group(1);
-                    def totalMillis = Integer.valueOf(match.group(2)) * 1000;
+                    def statName = match.group(2);
+                    def totalMillis = Double.valueOf(match.group(1)) * 1000;
                     def row = ruleStats[statName];
                     if (!row) {
                         row = [:];
@@ -228,13 +229,13 @@ private String runTests(File windup, String name, File inputFile) {
             }
 
             if (state == "phaseExecution") {
-                def match = line =~ /class (.*?): (.*?) ms .*/;
+                def match = line =~ /\s*(.*?), (.*)/;
                 if (match.matches()) {
-                    def statName = match.group(1);
+                    def statName = match.group(2);
                     if (statName.indexOf(".") != -1) {
                         statName = statName.substring(statName.lastIndexOf(".")+1);
                     }
-                    def totalMillis = Integer.valueOf(match.group(2)) * 1000;
+                    def totalMillis = Double.valueOf(match.group(1)) * 1000;
                     def row = phaseStats[statName];
                     if (!row) {
                         row = [:];
@@ -615,3 +616,4 @@ private Credential authorize(HttpTransport transport, JsonFactory jsonFactory) {
     }
 
 }
+[root@jsightle-windup-jenkins perftest]# 
