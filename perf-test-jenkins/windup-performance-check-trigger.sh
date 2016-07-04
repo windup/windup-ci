@@ -66,9 +66,7 @@ unzip -q ${SHARED_WORKSPACE}/windup-offline.zip -d ${SHARED_WORKSPACE}/windup
 rm -rf ~/.windup/logs/*
 
 cd ${SHARED_DATA}
-rm -rf ${SHARED_DATA}/testapps_output
-mkdir testapps_output
-
+rm -rf ${SHARED_DATA}/testapps_output/*
 
 ### create new directory for summary reports
 cd ${SHARED_DATA}
