@@ -22,9 +22,8 @@ import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.text.SimpleDateFormat
-//import static com.xlson.groovycsv.CsvParser.parseCsv
 
-
+// Downloads necessary dependencies
 @GrabConfig(systemClassLoader = true)
 @Grab('org.postgresql:postgresql:9.4-1201-jdbc41')
 @Grab('com.google.oauth-client:google-oauth-client:1.20.0')
@@ -32,114 +31,79 @@ import java.text.SimpleDateFormat
 @Grab('com.google.gdata:core:1.47.1')
 @Grab('com.google.http-client:google-http-client-jackson2:1.15.0-rc')
 
-@Field
-final String FILENAME_DATE_FORMAT = "yyyy_MM_dd_HHmm";
 
-@Field
-final String currentDateFormattedForFilename = new SimpleDateFormat(FILENAME_DATE_FORMAT).format(new Date());
+// Windup binary to execute
+File WINDUP_BIN = new File(args[0])
+println("WINDUP_BIN: ${WINDUP_BIN}")
 
-@Field
-final int NUMBER_OF_RUNS = 1;
+// Test application to be processed by Windup
+String TEST_APP_NAME = args[2]
+println("TEST_APP_NAME: ${TEST_APP_NAME}")
+File TEST_APP_FILE = new File(args[3])
+println("TEST_APP_FILE: ${TEST_APP_FILE}")
+if (!TEST_APP_FILE.exists()) {
+    println("Error: test application file ${TEST_APP_FILE} does not exist")
+    System.exit(1)
+}
 
-// The maximum number of standard deviations from the mean
-@Field
-final double STANDARD_DEVIATION_ERROR_THRESHOLD = 2.0;
+// Directory where to store Windup output reports for test applications
+@Field final File REPORT_BASE_DIR = new File("${args[1]}/testapps_output")
+println("REPORT_BASE_DIR: ${REPORT_BASE_DIR}")
 
+@Field final File SUMMARIES_OUTPUT_DIR = new File("${args[1]}/test_output_summaries")
+
+// Directory where to strore exported csv files and rule provider reports
+@Field final File SUMMARY_OUTPUT_DIR = getCurrentRuleSummaryDirectory()
+SUMMARY_OUTPUT_DIR.mkdirs()
+println("SUMMARY_OUTPUT_DIR: ${SUMMARY_OUTPUT_DIR}")
+
+
+// How many times to test with given application
+@Field final int NUMBER_OF_RUNS = 1
+
+// The maximum number of standard deviations from the mean before reporting error
+@Field final double STANDARD_DEVIATION_ERROR_THRESHOLD = 2.0
+
+
+// User id used to access Google services
+@Field String USER_ID = "windupdocs@gmail.com"
+
+// Directory containing this script
+@Field File SCRIPT_DIR = new File(getClass().protectionDomain.codeSource.location.path).parentFile
+
+// Directory with credetials used to access Google services
+@Field def CREDENTIALS_STORE_DIR = new File(SCRIPT_DIR, ".credentials")
+@Field def CLIENT_SECRETS_FILE = new File(CREDENTIALS_STORE_DIR, "client_secrets.json")
+@Field URL SPREADSHEET_FEED_URL = new URL("https://spreadsheets.google.com/feeds/spreadsheets/private/full")
+
+
+// Loads PostgreSQL driver
 Class.forName("org.postgresql.Driver");
 
-@Field
-String USER_ID = "windupdocs@gmail.com";
+println("Running Windup for ${TEST_APP_NAME}: ${NUMBER_OF_RUNS} run(s) on test file ${TEST_APP_FILE}")
+String results = runTests(WINDUP_BIN, TEST_APP_NAME, TEST_APP_FILE)
 
-@Field
-File SCRIPT_DIR = new File(getClass().protectionDomain.codeSource.location.path).parentFile;
-
-@Field
-File WINDUP_OFFLINE = new File(SCRIPT_DIR, "windup-offline.zip");
-
-@Field
-File WINDUP_UNZIPPED_FOLDER = new File(SCRIPT_DIR, "windup");
-
-deltree = {f ->
-    if (f.directory) f.eachFile {deltree(it)}
-    f.delete()
-}
-deltree(WINDUP_UNZIPPED_FOLDER);
-
-WINDUP_UNZIPPED_FOLDER.mkdirs();
-
-// unzip windup
-unzipP = "unzip ${WINDUP_OFFLINE.toString()} -d ${WINDUP_UNZIPPED_FOLDER.toString()}".execute();
-unzipP.consumeProcessOutput ();
-unzipP.consumeProcessErrorStream(System.out);
-unzipP.waitFor();
-
-File WINDUP_BIN;
-WINDUP_UNZIPPED_FOLDER.eachFileRecurse {
-    if (it.toString().endsWith("/bin/windup")) {
-        println(it.toString());
-        WINDUP_BIN = it;
-    }
-};
-println "Windup script: " + WINDUP_BIN;
-
-// Run windup on jee-test
-@Field
-File REPORT_BASE_DIR = new File("/opt/data/testapps_output");
-deltree(REPORT_BASE_DIR);
-REPORT_BASE_DIR.mkdirs();
-
-// This will contain the exported csv file and a rule provider report
-@Field
-File SUMMARY_OUTPUT_DIR = new File("/opt/data/test_output_summaries", currentDateFormattedForFilename);
-deltree(SUMMARY_OUTPUT_DIR);
-SUMMARY_OUTPUT_DIR.mkdirs();
-
-def TEST_FILES = new File("/opt/data/testapps");
-
-String results = "";
-
-def JEE_TEST_NAME = "jee-example";
-def JEE_TEST_FILE = new File(TEST_FILES, "other/jee-example-app-1.0.0.ear");
-results += runTests(WINDUP_BIN, JEE_TEST_NAME, JEE_TEST_FILE);
-
-// Run windup on hibernate example file
-def HIBERNATE_TEST_NAME = "hibernate-tutorial-web";
-def HIBERNATE_TEST_FILE = new File(TEST_FILES, "other/hibernate-tutorial-web-3.3.2.GA.war");
-results += runTests(WINDUP_BIN, HIBERNATE_TEST_NAME, HIBERNATE_TEST_FILE);
-
-results += runTests(WINDUP_BIN, "badly_named_app", new File(TEST_FILES, "other/badly_named_app"));
-results += runTests(WINDUP_BIN, "drgo01.ear", new File(TEST_FILES, "other/drgo01.ear"));
-results += runTests(WINDUP_BIN, "travelio.ear", new File(TEST_FILES, "other/travelio.ear"));
-results += runTests(WINDUP_BIN, "ClfySmartClient.ear", new File(TEST_FILES, "att/ClfySmartClient.ear"));
-results += runTests(WINDUP_BIN, "ClfyAgent.ear", new File(TEST_FILES, "att/ClfyAgent.ear"));
-results += runTests(WINDUP_BIN, "PLUM_22197_ACSI_PROD_05_16_2014.ear", new File(TEST_FILES, "att/PLUM_22197_ACSI_PROD_05_16_2014.ear"));
-results += runTests(WINDUP_BIN, "PassCodeReset.ear", new File(TEST_FILES, "att/PassCodeReset.ear"));
-results += runTests(WINDUP_BIN, "ViewIT.war", new File(TEST_FILES, "att/ViewIT.war"));
-results += runTests(WINDUP_BIN, "aps.ear", new File(TEST_FILES, "att/aps.ear"));
-results += runTests(WINDUP_BIN, "phoenix-1410.ear", new File(TEST_FILES, "att/phoenix-1410.ear"));
-results += runTests(WINDUP_BIN, "FKD2.ear", new File(TEST_FILES, "Lantik/FKD2.ear"));
-results += runTests(WINDUP_BIN, "GW03.ear", new File(TEST_FILES, "Lantik/GW03.ear"));
-results += runTests(WINDUP_BIN, "drswpc53.ear", new File(TEST_FILES, "Allianz/drswpc53.ear"));
 
 if (results != null && results.trim().length() > 0) {
-    println("================================");
-    println("");
-    println("ERROR:: " + results);
-    println("");
-    println("================================");
-    System.exit(1);
+    println("================================")
+    println("")
+    println("ERROR:: " + results)
+    println("")
+    println("================================")
+    System.exit(1)
 }
 
-private String runTests(File windup, String name, File inputFile) {
-    println("Running: " + NUMBER_OF_RUNS + " on input file: " + inputFile);
+
+private String runTests(File windup, String testAppName, File inputFile) {
     String result = "";
     long totalTime = 0;
 
-    for (int i = 0; i < NUMBER_OF_RUNS; i++) {
-        File reportDir = new File(REPORT_BASE_DIR, name + "-" + (i+1));
+    for (int i = 1; i <= NUMBER_OF_RUNS; i++) {
+        File reportDir = new File(REPORT_BASE_DIR, testAppName + "-" + i);
         reportDir.mkdirs();
 
-        String command = "${windup.getAbsolutePath()} --input ${inputFile.getAbsolutePath()} --output ${reportDir.getAbsolutePath()} --overwrite --batchMode --target eap --exportCSV --offline";
+        String command = "${windup.getAbsolutePath()} --input ${inputFile.getAbsolutePath()} \
+                --output ${reportDir.getAbsolutePath()} --overwrite --batchMode --target eap --exportCSV --offline";
         long startTime = System.currentTimeMillis();
 
         def env = [:];
@@ -151,10 +115,15 @@ private String runTests(File windup, String name, File inputFile) {
         windupProc.waitFor();
 
         long endTime = System.currentTimeMillis();
-        totalTime += (endTime - startTime);
+        long duration = endTime - startTime;
+        totalTime += duration;
+
+        println("Reports from run ${i} for app ${testAppName} created in ${duration} ms")
     }
 
-    long averageTimeMillis = totalTime/NUMBER_OF_RUNS;
+    long averageTimeMillis = totalTime / NUMBER_OF_RUNS;
+    println("Reports from all runs for app ${testAppName} created in ${totalTime} ms, avg ${averageTimeMillis} ms / run")
+
 
     def detailedStats = new LinkedHashMap();
     def ruleStats = new LinkedHashMap();
@@ -162,8 +131,7 @@ private String runTests(File windup, String name, File inputFile) {
 
 
     for (int i = 0; i < NUMBER_OF_RUNS; i++) {
-        File reportDir = new File(REPORT_BASE_DIR, name + "-" + (i + 1));
-        reportDir.mkdirs();
+        File reportDir = new File(REPORT_BASE_DIR, testAppName + "-" + (i + 1));
 
         // get the detailed stats
         File detailedStatsFile = new File(reportDir, "stats/detailed_stats.csv");
@@ -174,10 +142,10 @@ private String runTests(File windup, String name, File inputFile) {
             // See http://fiddle.re/2mm08a for a regex test.
             // TODO: Switch to Commons-CSV http://www.groovy-tutorial.org/basic-csv/#_reading_a_csv
             def match = line =~ /([^,]*?),\s*([^,]*?),\s*([^,]*?),\s*(?:([^",]+)|(?:"((?:[^\\"]++(?:\\")?)++)"))$/; //"
-            
+
             if (!match.matches())
                 return;
-                
+
             def numberOfExecs = Integer.valueOf(match.group(1).trim());
             def totalMillis = Integer.valueOf(match.group(2).trim());
             def detailedStatName = match.group(4);
@@ -248,7 +216,7 @@ private String runTests(File windup, String name, File inputFile) {
                 }
             }
         };
-        File appSummaryDirectory = new File(SUMMARY_OUTPUT_DIR, name);
+        File appSummaryDirectory = new File(SUMMARY_OUTPUT_DIR, testAppName);
         appSummaryDirectory.mkdirs();
 
         // copy a couple of summary files to the summary folder
@@ -261,35 +229,36 @@ private String runTests(File windup, String name, File inputFile) {
         }
 
         // Find the immediate predecessor to this one
-        File previousRuleSummariesDirectory = new File(getPreviousRuleSummariesDirectory(), name);
+        File previousRuleSummariesDirectory = new File(getPreviousRuleSummariesDirectory(), testAppName);
 
+        println("Comparing ${previousRuleSummariesDirectory} with ${appSummaryDirectory}")
         String csvComparisonResult = CSVCompare.compare(previousRuleSummariesDirectory, appSummaryDirectory);
         if (csvComparisonResult != null && csvComparisonResult.length() > 0) {
-            result += "Application: " + name + " returned differences:\n" + csvComparisonResult;
+            result += "Application: " + testAppName + " returned differences:\n" + csvComparisonResult;
             result += "\n";
         }
 
         // copy the rule providers report
         File ruleProviderReport = new File(reportDir, "reports/windup_ruleproviders.html");
         if (!ruleProviderReport.exists()) {
-            result += "Application: " + name + " is missing the rule provider report!";
+            result += "Application: " + testAppName + " is missing the rule provider report!";
         } else {
             File newRuleProviderReport = new File(appSummaryDirectory, "windup_ruleproviders.html");
             newRuleProviderReport << ruleProviderReport.text
 
             def failedItems = RuleProviderReportUtil.listFailedRules(newRuleProviderReport.toString());
             failedItems.each {
-                result += "On application: " + name + ", Rule: " + it.ruleID + " failed to execute!\n";
+                result += "On application: " + testAppName + ", Rule: " + it.ruleID + " failed to execute!\n";
             }
 
             File previousRuleProviderReport = new File(previousRuleSummariesDirectory, "windup_ruleproviders.html");
             if (!previousRuleProviderReport.exists()) {
-                println "No previous rule provider report is available for comparisong for application: " + name;
+                println "No previous rule provider report is available for comparisong for application: " + testAppName;
             } else {
                 def diffs = RuleProviderReportUtil.findDifferences(previousRuleProviderReport.toString(), newRuleProviderReport.toString());
                 if (!diffs.onlyInPrevious.isEmpty() || !diffs.onlyInNew.isEmpty()) {
                     println "=======================";
-                    println " Differences in rule executed vs the previous run for " + name + ":";
+                    println " Differences in rule executed vs the previous run for " + testAppName + ":";
 
                     if (!diffs.onlyInPrevious.isEmpty()) {
                         println "Only in Previous File: ";
@@ -314,19 +283,36 @@ private String runTests(File windup, String name, File inputFile) {
     }
 
     // log these detailed stats
-    result += logResults(name, averageTimeMillis, detailedStats, ruleStats, phaseStats);
+    println("Storing results for ${testAppName} into database")
+    result += logResults(testAppName, averageTimeMillis, detailedStats, ruleStats, phaseStats);
+
+    println("Uploading results for ${testAppName} to Google spradsheet")
+    uploadToGoogle(testAppName, averageTimeMillis, detailedStats, ruleStats, phaseStats);
+
     return result;
 }
 
 private File getPreviousRuleSummariesDirectory() {
-        File parentDir = SUMMARY_OUTPUT_DIR.getAbsoluteFile().getParentFile();
-        List<File> allSummaryDirectories = new ArrayList<>();
-        allSummaryDirectories.addAll(parentDir.listFiles());
-        allSummaryDirectories.sort();
+    List<File> allSummaryDirectories = new ArrayList<>();
+    allSummaryDirectories.addAll(SUMMARIES_OUTPUT_DIR.listFiles());
+    allSummaryDirectories.sort();
+
+    if (allSummaryDirectories.size > 1) {
         return allSummaryDirectories[-2];
+    } else {
+        return allSummaryDirectories[0];
+    }
 }
 
-private String logResults(String name, long averageTotalMillis, Map detailedStats, Map ruleStats, Map phaseStats) {
+private File getCurrentRuleSummaryDirectory() {
+    List<File> allSummaryDirectories = new ArrayList<>();
+    allSummaryDirectories.addAll(SUMMARIES_OUTPUT_DIR.listFiles());
+    allSummaryDirectories.sort();
+
+    return allSummaryDirectories[-1];
+}
+
+private String logResults(String testAppName, long averageTotalMillis, Map detailedStats, Map ruleStats, Map phaseStats) {
     String result = "";
     Connection connection = DriverManager.getConnection("jdbc:postgresql://localhost/perftest", "perftest", "");
     long perfTestID = 0;
@@ -334,7 +320,7 @@ private String logResults(String name, long averageTotalMillis, Map detailedStat
         String insertMainRow = "insert into performance_test(name, average_time_per_run, date_executed) values (?, ?, now()) returning performance_test_id";
         PreparedStatement pstmt = connection.prepareStatement(insertMainRow);
         try {
-            pstmt.setString(1, name);
+            pstmt.setString(1, testAppName);
             pstmt.setLong(2, (averageTotalMillis / 1000).longValue());
             ResultSet rs = pstmt.executeQuery()
             try {
@@ -351,18 +337,18 @@ private String logResults(String name, long averageTotalMillis, Map detailedStat
         String getAvgAndStdevSql = "select avg(average_time_per_run),stddev_pop(average_time_per_run) from performance_test where name = ?";
         PreparedStatement getAvgStatement = connection.prepareStatement(getAvgAndStdevSql);
         try {
-            getAvgStatement.setString(1, name);
+            getAvgStatement.setString(1, testAppName);
             ResultSet rs = getAvgStatement.executeQuery();
             rs.next();
             double previousAverageSeconds = rs.getDouble(1);
             double previousStandardDeviation = rs.getDouble(2);
-            
+
             double diffFromAverage = Math.abs((averageTotalMillis/1000) - previousAverageSeconds);
             double maxDiff = (double)STANDARD_DEVIATION_ERROR_THRESHOLD * previousStandardDeviation;
             if (diffFromAverage > maxDiff) {
-                result = "Performance out of spec for: " + name + ", " + diffFromAverage + 
-                         " from average, but the the threshold (" + STANDARD_DEVIATION_ERROR_THRESHOLD + "*" + previousStandardDeviation + ") is: " + 
-                         maxDiff + " (Previous Average: " + previousAverageSeconds + ", StdDev: " + previousStandardDeviation + 
+                result = "Performance out of spec for: " + testAppName + ", " + diffFromAverage +
+                         " from average, but the the threshold (" + STANDARD_DEVIATION_ERROR_THRESHOLD + "*" + previousStandardDeviation + ") is: " +
+                         maxDiff + " (Previous Average: " + previousAverageSeconds + ", StdDev: " + previousStandardDeviation +
                          ", Current Runtime: " + (averageTotalMillis/1000) + ")\n";
             }
 
@@ -409,18 +395,10 @@ private String logResults(String name, long averageTotalMillis, Map detailedStat
         connection.close();
     }
 
-    uploadToGoogle(name, averageTotalMillis, detailedStats, ruleStats, phaseStats);
     return result;
 }
 
-@Field
-def CREDENTIALS_STORE_DIR = new File(SCRIPT_DIR, ".credentials");
-@Field
-def CLIENT_SECRETS_FILE = new File(CREDENTIALS_STORE_DIR, "client_secrets.json");
-@Field
-URL SPREADSHEET_FEED_URL = new URL("https://spreadsheets.google.com/feeds/spreadsheets/private/full");
-
-private void uploadToGoogle(String name, long averageTotalMillis, Map detailedStats, Map ruleStats, Map phaseStats) {
+private void uploadToGoogle(String testAppName, long averageTotalMillis, Map detailedStats, Map ruleStats, Map phaseStats) {
     // 5. Authenticate to Google
     /** Global instance of the HTTP transport. */
     final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
@@ -437,9 +415,9 @@ private void uploadToGoogle(String name, long averageTotalMillis, Map detailedSt
     service.setOAuth2Credentials(credential);
 
     // Make a request to the API and get all spreadsheets.
-    SpreadsheetEntry spreadsheet = getSpreadSheet(service, name);
+    SpreadsheetEntry spreadsheet = getSpreadSheet(service, testAppName);
     if (spreadsheet == null) {
-        throw new RuntimeException("Failed to find spreadsheet for " + name + " (name should be \"perftest - " + name + "\")");
+        throw new RuntimeException("Failed to find spreadsheet for " + testAppName + " (name should be \"perftest - " + testAppName + "\")");
     }
 
     WorksheetFeed worksheetFeed = service.getFeed(spreadsheet.getWorksheetFeedUrl(), WorksheetFeed.class);
@@ -472,7 +450,7 @@ private void uploadToGoogle(String name, long averageTotalMillis, Map detailedSt
     // Fetch the cell feed of the worksheet.
     def mapRow = [:];
     mapRow['Date'] = dateFormatted;
-    mapRow['Name'] = name;
+    mapRow['Name'] = testAppName;
     mapRow['Duration (in Seconds)'] = String.valueOf((averageTotalMillis/1000).intValue());
     updateWorksheet(service, totalWorksheet, mapRow);
 
@@ -613,5 +591,4 @@ private Credential authorize(HttpTransport transport, JsonFactory jsonFactory) {
     } finally {
         clientSecretsIS.close();
     }
-
 }
