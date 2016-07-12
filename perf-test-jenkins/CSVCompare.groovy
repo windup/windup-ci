@@ -5,41 +5,69 @@ import org.jboss.windup.utils.model.ExportReportModelToCSV;
 import org.jboss.windup.utils.model.ReportModel;
 
 public class CSVCompare {
-    public static String compare(File directory1, File directory2) {
+
+    public static String compare(File oldOutputs, File currentOutputs) {
         String result = "";
-        File[] csvFiles = directory2.listFiles();
-        for (File file : csvFiles) {
-            if (file.getName().toLowerCase().endsWith(".csv")) {
-                File file1 = new File(directory1, file.getName());
-                if (!file1.exists())
-                    result += "Previous rule points information is missing for: " + file + " (previous directory: " + directory1 + ")\n";
-                else
-                    result += compareCSVFiles(file1, file);
+
+        for (File currentCsv : currentOutputs.listFiles()) {
+            if (currentCsv.getName().toLowerCase().endsWith(".csv")) {
+                File oldCsv = new File(oldOutputs, currentCsv.getName());
+                if (!oldCsv.exists()) {
+                    result += "The CSV output " + currentCsv + " is not present in old outputs " + oldOutputs + "\n";
+                } else {
+                    result += compareCsvFiles(oldCsv, currentCsv);
+                }
             }
         }
+
+        for (File oldCsv : oldOutputs.listFiles()) {
+            if (oldCsv.getName().toLowerCase().endsWith(".csv")) {
+                File currentCsv = new File(currentOutputs, oldCsv.getName());
+                if (!currentCsv.exists()) {
+                    result += "The CSV output " + oldCsv + " is not present in current outputs " + currentOutputs + "\n";
+                }
+            }
+        }
+
         return result;
     }
 
-    private static String compareCSVFiles(File file1, File file2) {
+    private static String compareCsvFiles(File oldCsv, File currentCsv) {
         String result = "";
-        try
-        {
-            CsvWindupExportLoader loader1 = new CsvWindupExportLoader(file1.toURL(), (char)',');
-            println "Original file " + file1;
-            CsvWindupExportLoader loader2 = new CsvWindupExportLoader(file2.toURL(), (char)',');
-            println "New file " + file2;
-            WindupReportComparison reportCmp = new WindupReportComparison(loader1.parseCSV(), loader2.parseCSV());
-            List<ReportModel> listDiff = reportCmp.compareNewAndOldReports();
-            if (listDiff.size()> 0) {
-                result += listDiff.toString();
-                (new ExportReportModelToCSV(listDiff)).export(new File("diff.csv"));
+
+        println "  Comparing old file " + oldCsv;
+        println "  with current file  " + currentCsv;
+
+        try {
+            List<ReportModel> oldCsvLines = new CsvWindupExportLoader(oldCsv.toURL(), (char) ',').parseCSV();
+            List<ReportModel> currentCsvLines = new CsvWindupExportLoader(currentCsv.toURL(), (char) ',').parseCSV();
+
+            WindupReportComparison extraInCurrentComparision = new WindupReportComparison(oldCsvLines, currentCsvLines);
+            List<ReportModel> extraLinesInCurrent = extraInCurrentComparision.compareNewAndOldReports();
+            if (!extraLinesInCurrent.isEmpty()) {
+                result += "* Extra lines in current CSV report " + currentCsv + "\n"
+                result += "  see following lines or " + currentCsv + "-extra_in_current-diff.csv\n"
+                result += extraLinesInCurrent.join(",\n") + "\n";
+                (new ExportReportModelToCSV(extraLinesInCurrent))
+                        .export(new File(currentCsv.parent, currentCsv.name + "-extra_in_current-diff.csv"));
             }
-        }
-        catch (MalformedURLException e) {
+
+            WindupReportComparison extraInOldComparision = new WindupReportComparison(currentCsvLines, oldCsvLines);
+            List<ReportModel> extraLinesInOld = extraInOldComparision.compareNewAndOldReports();
+            if (!extraLinesInOld.isEmpty()) {
+                result += "* Extra lines in old CSV report " + oldCsv + "\n"
+                result += "  see following lines or " + currentCsv + "-extra_in_old-diff.csv\n"
+                result += extraLinesInOld.join(",\n") + "\n";
+                (new ExportReportModelToCSV(extraLinesInOld))
+                        .export(new File(currentCsv.parent, currentCsv.name + "-extra_in_old-diff.csv"));
+            }
+        } catch (MalformedURLException e) {
            result += "MalformedURLException: " + e.getMessage() + "\n";
         } catch (IOException ioe) {
            result += "Error while exporting resulted difference to file - " + ioe.getLocalizedMessage() + "\n";
         }
+
         return result;
     }
+
 }
