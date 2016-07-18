@@ -1,5 +1,5 @@
 #!/bin/bash
-//usr/bin/env groovy  -cp groovy/csvcompare-0.0.1-SNAPSHOT.jar "$0" $@; exit $?
+//usr/bin/env groovy  -cp groovy/csvcompare-0.0.2.jar "$0" $@; exit $?
 
 import groovy.transform.Field
 
@@ -14,7 +14,7 @@ import groovy.transform.Field
  *              in the "test_output_summaries" dir
  * - args[2] -- test app name, determines which Google spreadsheet to use
  * - args[3] -- path to test app file
- * - .credentials -- direcory with credatial to access Google services is present in the dir with this script
+ * - .credentials -- direcory with credential to access Google services is present in the dir with this script
  * - CSVCompare.groovy, RuleProviderReportUtil.groovy, SummaryResult.groovy, SummaryResultDb.groovy,
  *   SummaryResultGoogleSpreadsheet.groovy in the dir with this script
  * - csvcompare-0.0.1-SNAPSHOT.jar in the "groovy" subdir of the dir with this script

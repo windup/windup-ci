@@ -60,7 +60,7 @@ public class SummaryResultGoogleSpreadsheet {
         if (spreadsheet == null) {
             throw new RuntimeException("Failed to find spreadsheet for " + testAppName + " (name should be \"perftest - " + testAppName + "\")");
         }
-        println("Uploading to spradsheet ${spreadsheet.spreadsheetLink.href}")
+        println("Uploading to spreadsheet ${spreadsheet.spreadsheetLink.href}")
 
         WorksheetFeed worksheetFeed = service.getFeed(spreadsheet.getWorksheetFeedUrl(), WorksheetFeed.class);
         WorksheetEntry totalWorksheet;
