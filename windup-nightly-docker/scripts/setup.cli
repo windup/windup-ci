@@ -1,3 +1,5 @@
 embed-server --server-config=standalone-full.xml
 jms-queue add --queue-address=executorQueue --entries=queues/executorQueue
 jms-queue add --queue-address=statusUpdateQueue --entries=queues/statusUpdateQueue
+jms-queue add --queue-address=packageDiscoveryQueue --entries=queues/packageDiscoveryQueue
+

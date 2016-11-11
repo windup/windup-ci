@@ -1,9 +1,13 @@
 #!/bin/bash
 
+MAVEN_HOME=/var/lib/jenkins/tools/apache-maven-3.3.9
+export PATH=$PATH:$MAVEN_HOME/bin
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BUILD_DATE=`date +%Y%m%d`
 
 cd $DIR
+
 
 cd windup-web
 git pull
@@ -37,6 +41,8 @@ if [ $?	!= 0 ];	then
         exit 1
 fi
 
+./image/wildfly/bin/jboss-cli.sh --commands='embed-server -c=standalone-full.xml,/subsystem=datasources/data-source=WindupServicesDS:add(jndi-name="java:jboss/datasources/WindupServicesDS", connection-url="jdbc:h2:${jboss.server.data.dir}/h2/windup-web", driver-name="h2", max-pool-size=30, user-name=sa, password=sa)'
+
 # Copy services
 cp -R windup-web/services/target/windup-web-services image/wildfly/standalone/deployments/windup-web-services.war
 if [ $?	!= 0 ];	then
@@ -64,4 +70,3 @@ if [ $?	!= 0 ];	then
         echo "Docker push failed"
         exit 1
 fi
-

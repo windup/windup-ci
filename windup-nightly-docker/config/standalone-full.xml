@@ -166,6 +166,17 @@
                         <password>sa</password>
                     </security>
                 </datasource>
+                <datasource jndi-name="java:jboss/datasources/WindupServicesDS" pool-name="WindupServicesDS">
+                    <connection-url>jdbc:h2:${jboss.server.data.dir}/h2/windup-web</connection-url>
+                    <driver>h2</driver>
+                    <pool>
+                        <max-pool-size>30</max-pool-size>
+                    </pool>
+                    <security>
+                        <user-name>sa</user-name>
+                        <password>sa</password>
+                    </security>
+                </datasource>
                 <drivers>
                     <driver name="h2" module="com.h2database.h2">
                         <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
@@ -361,6 +372,7 @@
                 <jms-queue name="DLQ" entries="java:/jms/queue/DLQ"/>
                 <jms-queue name="executorQueue" entries="queues/executorQueue"/>
                 <jms-queue name="statusUpdateQueue" entries="queues/statusUpdateQueue"/>
+                <jms-queue name="packageDiscoveryQueue" entries="queues/packageDiscoveryQueue"/>
                 <connection-factory name="InVmConnectionFactory" entries="java:/ConnectionFactory" connectors="in-vm"/>
                 <connection-factory name="RemoteConnectionFactory" entries="java:jboss/exported/jms/RemoteConnectionFactory" connectors="http-connector"/>
                 <pooled-connection-factory name="activemq-ra" entries="java:/JmsXA java:jboss/DefaultJMSConnectionFactory" connectors="in-vm" transaction="xa"/>
