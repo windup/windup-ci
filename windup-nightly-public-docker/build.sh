@@ -45,7 +45,7 @@ fi
 
 ./image/wildfly/bin/jboss-cli.sh --commands='embed-server -c=standalone-full.xml,/subsystem=datasources/data-source=WindupServicesDS:add(jndi-name="java:jboss/datasources/WindupServicesDS", connection-url="jdbc:h2:${jboss.server.data.dir}/h2/windup-web", driver-name="h2", max-pool-size=30, user-name=sa, password=sa)'
 ./image/wildfly/bin/jboss-cli.sh --commands='embed-server -c=standalone-full.xml,/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-post-size, value=524288000)'
-./image/wildfly/bin/jboss-cli.sh --commands='embed-server -c=standalone-full.xml,/system-property=keycloak.server.url:write-attribute(name=value, value=${env.KEYCLOAK_URL:http://localhost:8280/auth})'
+./image/wildfly/bin/jboss-cli.sh --commands='embed-server -c=standalone-full.xml,/system-property=keycloak.server.url:write-attribute(name=value, value=${env.KEYCLOAK_URL:http://localhost:8180/auth})'
 
 # Copy services
 cp -R windup-web/services/target/windup-web-services image/wildfly/standalone/deployments/windup-web-services.war
