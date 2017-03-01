@@ -1,4 +1,4 @@
-FROM fedora:24
+FROM fedora:25
 
 RUN dnf update -y
 RUN dnf install -y java-1.8.0-openjdk-devel java-1.8.0-openjdk-headless

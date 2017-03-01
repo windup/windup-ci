@@ -10,7 +10,6 @@ cd $DIR
 
 
 cd windup-web
-rm -rf ui/src/main/webapp/yarn.lock
 
 git pull
 if [ $? != 0 ]; then
