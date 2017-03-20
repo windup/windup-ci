@@ -10,7 +10,8 @@ cd $DIR
 
 
 cd windup-web
-
+git checkout -- .
+git clean -f -d
 git pull
 if [ $? != 0 ]; then
 	echo "Git pull failed"
