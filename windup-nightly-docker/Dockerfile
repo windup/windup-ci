@@ -1,4 +1,4 @@
-FROM fedora:24
+FROM fedora:25
 
 # Update and get the JDK installed
 RUN dnf update -y
@@ -11,12 +11,11 @@ COPY wildfly/wildfly /opt/jboss/wildfly
 COPY config/standalone.conf /opt/jboss/wildfly/bin/
 COPY config/standalone-full.xml /opt/jboss/wildfly/standalone/configuration/
 COPY config/keycloak.h2.db /opt/jboss/wildfly/standalone/data/
-COPY config/keycloak.trace.db /opt/jboss/wildfly/standalone/data/
 
 # Copy the apps
-COPY wars/windup-web-services.war /opt/jboss/wildfly/standalone/deployments/windup-web-services.war
-COPY wars/windup-web-services.war.dodeploy /opt/jboss/wildfly/standalone/deployments/
-COPY wars/windup-web.war /opt/jboss/wildfly/standalone/deployments/
+COPY wars/api.war /opt/jboss/wildfly/standalone/deployments/api.war
+COPY wars/api.war.dodeploy /opt/jboss/wildfly/standalone/deployments/
+COPY wars/rhamt-web.war /opt/jboss/wildfly/standalone/deployments/
 COPY samples /samples
 
 EXPOSE 8080

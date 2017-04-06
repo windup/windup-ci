@@ -48,20 +48,20 @@ fi
 ./image/wildfly/bin/jboss-cli.sh --commands='embed-server -c=standalone-full.xml,/system-property=keycloak.server.url:write-attribute(name=value, value=${env.KEYCLOAK_URL:/auth})'
 
 # Copy services
-cp -R windup-web/services/target/windup-web-services image/wildfly/standalone/deployments/windup-web-services.war
+cp -R windup-web/services/target/rhamt-web/api image/wildfly/standalone/deployments/api.war
 if [ $?	!= 0 ];	then
         echo "Windup Web Services Copy failed"
         exit 1
 fi
-touch image/wildfly/standalone/deployments/windup-web-services.war.dodeploy
+touch image/wildfly/standalone/deployments/api.war.dodeploy
 
 # Copy UI
-cp -R windup-web/ui/target/windup-web image/wildfly/standalone/deployments/windup-web.war
+cp -R windup-web/ui/target/rhamt-web image/wildfly/standalone/deployments/rhamt-web.war
 if [ $?	!= 0 ];	then
         echo "Windup Web UI Copy failed"
         exit 1
 fi
-touch image/wildfly/standalone/deployments/windup-web.war.dodeploy
+touch image/wildfly/standalone/deployments/rhamt-web.war.dodeploy
 
 cd image
 docker build -t=docker.io/windup3/windup-web_nightly .
