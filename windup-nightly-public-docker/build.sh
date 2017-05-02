@@ -32,9 +32,9 @@ if [ $? != 0 ]; then
 fi
 
 cd windup-web
-mvn clean install -DskipTests
+mvn clean install -DskipTests -Dwebpack.environment=production
 if [ $? != 0 ]; then
-        echo "Maven build failed for windup-web-keycloak-tool"
+        echo "Maven build failed for windup-web"
         exit 1
 fi
 cd ..
