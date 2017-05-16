@@ -24,8 +24,7 @@ SHARED_WORKSPACE=${SHARED_WORKSPACE_DIR:-/opt/perftest}
 SHARED_DATA=${SHARED_DATA_DIR:-/opt/data}
 TEST_FILES=${SHARED_DATA}/testapps
 
-WINDUP_BIN=$(ls ${SHARED_WORKSPACE}/windup/windup*/bin/windup)
-
+WINDUP_BIN=$(ls ${SHARED_WORKSPACE}/windup/rhamt-cli*/bin/rhamt-cli)
 
 ### get test app file according to given test app name
 declare -A TEST_APP_MAP
