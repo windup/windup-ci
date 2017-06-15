@@ -1,0 +1,23 @@
+version: '3'
+services:
+  db:
+    image: postgres:9.6-alpine
+    environment:
+      POSTGRES_USER: windup
+      POSTGRES_PASSWORD: password12345
+
+  windup-web:
+    build: .
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    environment:
+      DB_HOST: db
+      DB_USER: windup
+      DB_PASSWORD: password12345
+      DB_URI: db:5433
+      DATA_DIR: "/data/windup"
+      KEYCLOAK_REALM_PUBLIC_KEY: ""
+      KEYCLOAK_AUTH_URL: ""
