@@ -1,8 +1,13 @@
+## TODO: Find out how to pass env. variables here and remove this duplicated file from execute.sh
 # Mark the commands below to be run as a batch
 batch
 
 # Add the datasource
-data-source add --name=WindupServicesDS --driver-name=postgresql --jndi-name=java:jboss/datasources/WindupServicesDS --connection-url=jdbc:$DB_URI/windup?useUnicode=true&amp;characterEncoding=UTF-8 --user-name=$DB_USER --password=$DB_PASSWORD--use-ccm=false --max-pool-size=25 --blocking-timeout-wait-millis=5000 --enabled=true
+# Install postgres
+module add --name=org.postgresql --resources=/opt/jboss/wildfly/postgresql-connector.jar --dependencies=javax.api,javax.transaction.api
+/subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver)
+
+data-source add --name=WindupServicesDS --driver-name=postgresql --jndi-name=java:jboss/datasources/WindupServicesDS --connection-url=$CONNECTION_URL?useUnicode=true&amp;characterEncoding=UTF-8 --user-name=$DB_USER --password="$DB_PASSWORD" --use-ccm=false --max-pool-size=25 --blocking-timeout-wait-millis=5000 --enabled=true
 
 jms-queue add --queue-address=executorQueue --entries=queues/executorQueue
 jms-queue add --queue-address=statusUpdateQueue --entries=queues/statusUpdateQueue
@@ -10,12 +15,15 @@ jms-queue add --queue-address=packageDiscoveryQueue --entries=queues/packageDisc
 jms-topic add --topic-address=executorCancellation --entries=topics/executorCancellation
 
 # keycloak
-/subsystem=keycloak/secure-deployment=new:add(realm=rhamt, realm-public-key=KEYCLOAK_REALM_PUBLIC_KEY, auth-server-url=KEYCLOAK_AUTH_URL, public-client=true, ssl-required=EXTERNAL, resource=rhamt-web)
-/subsystem=keycloak/secure-deployment=new:add(realm=rhamt, realm-public-key=KEYCLOAK_REALM_PUBLIC_KEY, auth-server-url=KEYCLOAK_AUTH_URL, public-client=true, ssl-required=EXTERNAL, resource=rhamt-web)
+/subsystem=keycloak/secure-deployment=api.war:add(realm=rhamt, auth-server-url=$KEYCLOAK_AUTH_URL, public-client=true, ssl-required=EXTERNAL, resource=rhamt-web)
+/subsystem=keycloak/secure-deployment=rhamt-web.war:add(realm=rhamt, auth-server-url=$KEYCLOAK_AUTH_URL, public-client=true, ssl-required=EXTERNAL, resource=rhamt-web)
 
 # other
 # Properties
-/system-property=windup.data.dir:add(value="DATA_DIR/windup-web")
+/system-property=windup.data.dir:add(value="$DATA_DIR/windup-web")
+/system-property=keycloak.realm.public.key:add(value="$KEYCLOAK_REALM_PUBLIC_KEY")
+/system-property=keycloak.server.url:add(value="$KEYCLOAK_AUTH_URL")
+
 
 # Logging
 /subsystem=logging/logger=org.jboss.windup:add(level=INFO, use-parent-handlers=false, handlers=[])
