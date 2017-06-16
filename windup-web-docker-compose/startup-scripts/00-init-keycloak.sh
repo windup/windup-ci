@@ -9,7 +9,6 @@ $JBOSS_CLI -c << EOF
 batch
 
 # Properties
-/system-property=windup.data.dir:add(value="$DATA_DIR")
 /system-property=keycloak.realm.public.key:add(value="$KEYCLOAK_REALM_PUBLIC_KEY")
 /system-property=keycloak.server.url:add(value="$KEYCLOAK_AUTH_URL")
 

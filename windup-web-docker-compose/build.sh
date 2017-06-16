@@ -9,8 +9,6 @@ BUILD_DATE=`date +%Y%m%d`
 cd $DIR
 
 rm -rf windup-web
-rm -rf windup-keycloak-tool
-rm -rf windup-web-distribution
 
 git clone https://github.com/windup/windup-web.git
 if [ $? != 0 ]; then
@@ -20,10 +18,18 @@ fi
 
 cd windup-web
 mvn clean install -DskipTests -Dwebpack.environment=production
+
+if [ $? != 0 ]; then
+    echo "First attempt to build failed, repeating"
+    mvn install -DskipTests -Dwebpack.environment=production
+fi
+
 if [ $? != 0 ]; then
         echo "Maven build failed for windup-web"
         exit 1
 fi
 
-cp services/target/rhamt-web/api.war ../wars/
-cp ui/target/rhamt-web.war ../wars/
+cd windup-web
+mkdir ../wars
+cp services/target/rhamt-web/api.war ../wars
+cp ui/target/rhamt-web.war ../wars

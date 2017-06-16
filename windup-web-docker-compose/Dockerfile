@@ -1,14 +1,5 @@
-FROM jboss/wildfly:10.1.0.Final
-# FROM jboss/keycloak-adapter-wildfly:3.1.0.Final
-
-ENV KEYCLOAK_VERSION 3.1.0.Final
+FROM jboss/keycloak-adapter-wildfly:3.1.0.Final
 ENV CONFIG_FILE standalone-full.xml
-
-WORKDIR /opt/jboss/wildfly
-
-RUN curl -L https://downloads.jboss.org/keycloak/$KEYCLOAK_VERSION/adapters/keycloak-oidc/keycloak-wildfly-adapter-dist-$KEYCLOAK_VERSION.tar.gz | tar zx
-
-WORKDIR /opt/jboss
 
 # Standalone.xml modifications.
 RUN sed -i -e 's/<extensions>/&\n        <extension module="org.keycloak.keycloak-adapter-subsystem"\/>/' $JBOSS_HOME/standalone/configuration/$CONFIG_FILE && \
@@ -17,6 +8,14 @@ RUN sed -i -e 's/<extensions>/&\n        <extension module="org.keycloak.keycloa
 
 ### END OF keycloak customization part
 
+## Copy application - ANOTHER LAYER
+# Copy the war files
+COPY wars/api.war /opt/jboss/wildfly/standalone/deployments/api.war
+COPY wars/rhamt-web.war /opt/jboss/wildfly/standalone/deployments/
+
+CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "--server-config=standalone-full.xml"]
+
+# CUSTOMIZED SECTION - COULD BE SEPARATE DOCKER FILE ON TOP OF PREVIOUS ONE
 ARG DB_HOST
 ARG DB_USER
 ARG DB_PASSWORD
@@ -25,17 +24,11 @@ ARG DATA_DIR
 ARG KEYCLOAK_REALM_PUBLIC_KEY
 ARG KEYCLOAK_AUTH_URL
 
-ADD customization /opt/jboss/wildfly/customization/
 COPY config/standalone.conf /opt/jboss/wildfly/bin/
-ADD build.sh /opt/jboss/wildfly/customization/build.sh
+ADD startup.sh /opt/jboss/wildfly/customization/startup.sh
 
 ENV POSTGRESQL_DRIVER_VERSION 42.1.1
 RUN /opt/jboss/wildfly/customization/startup.sh standalone standalone-full.xml
 
-# Copy the apps
-COPY wars/api.war /opt/jboss/wildfly/standalone/deployments/api.war
-COPY wars/rhamt-web.war /opt/jboss/wildfly/standalone/deployments/
-
 # Use line below for debugging purposes
 # CMD ["sh", "-c", "tail -f /dev/null"]
-CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "--server-config=standalone-full.xml"]
