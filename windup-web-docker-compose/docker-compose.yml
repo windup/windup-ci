@@ -38,6 +38,7 @@ services:
       - "9090:9090"
     volumes:
       - ./docker-volume:/var/windup
+      - ./startup-scripts:/docker-entrypoint-init.d:ro
     environment:
       DB_HOST: db
       DB_USER: windup

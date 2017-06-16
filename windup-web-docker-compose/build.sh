@@ -18,56 +18,12 @@ if [ $? != 0 ]; then
         exit 1
 fi
 
-git clone https://github.com/windup/windup-keycloak-tool.git
-if [ $? != 0 ]; then
-        echo "Git clone (windup-web-keycloak-tool) failed"
-        exit 1
-fi
-
-
-git clone https://github.com/windup/windup-web-distribution.git
-if [ $? != 0 ]; then
-        echo "Git clone (windup-web-distribution) failed"
-        exit 1
-fi
-
 cd windup-web
 mvn clean install -DskipTests -Dwebpack.environment=production
 if [ $? != 0 ]; then
         echo "Maven build failed for windup-web"
         exit 1
 fi
-cd ..
 
-
-cd windup-keycloak-tool
-mvn clean install
-if [ $? != 0 ]; then
-        echo "Maven build failed for windup-web-keycloak-tool"
-        exit 1
-fi
-cd ..
-
-
-cd windup-web-distribution
-mvn clean install
-if [ $? != 0 ]; then
-        echo "Maven build failed for windup-web-distribution"
-        exit 1
-fi
-
-unzip -d target/ target/rhamt-web-distribution-*.zip
-if [ $?	!= 0 ];	then
-        echo "Distribution unzip failed"
-        exit 1
-fi
-
-rm target/rhamt-web-distribution-*.zip
-mv target/rhamt-web-distribution-* target/rhamt-web-distribution
-if [ $?	!= 0 ];	then
-        echo "RHAMT copy failed"
-        exit 1
-fi
-
-
-cd target/rhamt-web-distribution
+cp services/target/rhamt-web/api.war ../wars/
+cp ui/target/rhamt-web.war ../wars/
