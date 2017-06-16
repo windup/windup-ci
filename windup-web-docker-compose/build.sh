@@ -29,7 +29,6 @@ if [ $? != 0 ]; then
         exit 1
 fi
 
-cd windup-web
 mkdir ../wars
 cp services/target/rhamt-web/api.war ../wars
 cp ui/target/rhamt-web.war ../wars
