@@ -27,7 +27,7 @@ services:
         DB_PASSWORD: password12345
         DB_URI: db
         DATA_DIR: "/var/windup"
-        KEYCLOAK_REALM_PUBLIC_KEY: ""
+        KEYCLOAK_REALM_PUBLIC_KEY: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgmMfkT3fsuqRTnt17kPNGXm98Y//KxL+AeogTT5gS2mQkGWyLusP2WMbshc984Scyu/b7VoL7g/2Pq2Cm2TWi0+ffOryCJOz1NrLBqDqx/aGH9p337ZPWf5DiNxrhfxNxwF1002a+bp+3Lev1S+jZOjBI7emDBLR8iNu/xRbwbeCPiEwf4vM1vTJmgXBzA/efBzjfbTe7cjt8VSEPlOLZD29smmcpq8FayJSbPiqSIC1EfhA204nh3r/VzaBEcVQqsU1s51TT8724W3Z9DdSdFk3KNU/wc4nC8AXkZ6nFVT4RITwL5QsEuA2GIMDYtGaPk2OvxkcC4voCD9NBhUZSwIDAQAB"
         KEYCLOAK_AUTH_URL: http://localhost:7070/auth
     depends_on:
       - db
@@ -44,6 +44,6 @@ services:
       DB_PASSWORD: password12345
       DB_URI: db
       DATA_DIR: "/var/windup"
-      KEYCLOAK_REALM_PUBLIC_KEY: ""
+      KEYCLOAK_REALM_PUBLIC_KEY: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgmMfkT3fsuqRTnt17kPNGXm98Y//KxL+AeogTT5gS2mQkGWyLusP2WMbshc984Scyu/b7VoL7g/2Pq2Cm2TWi0+ffOryCJOz1NrLBqDqx/aGH9p337ZPWf5DiNxrhfxNxwF1002a+bp+3Lev1S+jZOjBI7emDBLR8iNu/xRbwbeCPiEwf4vM1vTJmgXBzA/efBzjfbTe7cjt8VSEPlOLZD29smmcpq8FayJSbPiqSIC1EfhA204nh3r/VzaBEcVQqsU1s51TT8724W3Z9DdSdFk3KNU/wc4nC8AXkZ6nFVT4RITwL5QsEuA2GIMDYtGaPk2OvxkcC4voCD9NBhUZSwIDAQAB"
       KEYCLOAK_AUTH_URL: http://localhost:7070/auth
       #http://keycloak/auth

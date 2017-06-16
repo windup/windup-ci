@@ -49,16 +49,15 @@ jms-queue add --queue-address=statusUpdateQueue --entries=queues/statusUpdateQue
 jms-queue add --queue-address=packageDiscoveryQueue --entries=queues/packageDiscoveryQueue
 jms-topic add --topic-address=executorCancellation --entries=topics/executorCancellation
 
-# keycloak
-/subsystem=keycloak/secure-deployment=api.war:add(realm=rhamt, auth-server-url=$KEYCLOAK_AUTH_URL, public-client=true, ssl-required=EXTERNAL, resource=rhamt-web)
-/subsystem=keycloak/secure-deployment=rhamt-web.war:add(realm=rhamt, auth-server-url=$KEYCLOAK_AUTH_URL, public-client=true, ssl-required=EXTERNAL, resource=rhamt-web)
-
 # other
 # Properties
-/system-property=windup.data.dir:add(value="$DATA_DIR/windup-web")
+/system-property=windup.data.dir:add(value="$DATA_DIR")
 /system-property=keycloak.realm.public.key:add(value="$KEYCLOAK_REALM_PUBLIC_KEY")
 /system-property=keycloak.server.url:add(value="$KEYCLOAK_AUTH_URL")
 
+# keycloak
+/subsystem=keycloak/secure-deployment=api.war:add(realm=rhamt, realm-public-key="\${keycloak.realm.public.key}", auth-server-url="\${keycloak.server.url}", public-client=true, ssl-required=EXTERNAL, resource=rhamt-web)
+/subsystem=keycloak/secure-deployment=rhamt-web.war:add(realm=rhamt, realm-public-key="\${keycloak.realm.public.key}", auth-server-url="\${keycloak.server.url}", public-client=true, ssl-required=EXTERNAL, resource=rhamt-web)
 
 # Logging
 /subsystem=logging/logger=org.jboss.windup:add(level=INFO, use-parent-handlers=false, handlers=[])
