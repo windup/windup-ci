@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" 
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <mirrors>
+    <mirror>
+      <id>artifactorycentral</id>
+      <name>Artifactory Central</name>
+      <url>http://172.17.0.1:8081/artifactory/centralmirror</url>
+      <mirrorOf>central</mirrorOf>
+    </mirror>
+  </mirrors>
+
+  <profiles>
+    <!-- Configure the JBoss Community Maven repository -->
+    <profile>
+      <id>central-mirror</id>
+      <repositories>
+        <repository>
+          <id>central-mirror-repository</id>
+          <url>http://172.17.0.1:8081/artifactory/centralmirror</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>central-mirror-plugin-repository</id>
+          <url>http://172.17.0.1:8081/artifactory/centralmirror</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+    <!-- Configure the JBoss Community Maven repository -->
+    <profile>
+      <id>jboss-community-repository</id>
+      <repositories>
+        <repository>
+          <id>jboss-community-repository</id>
+          <url>http://172.17.0.1:8081/artifactory/jboss</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>jboss-community-plugin-repository</id>
+          <url>http://172.17.0.1:8081/artifactory/jboss</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+
+  <activeProfiles>
+    <activeProfile>central-mirror</activeProfile>
+    <activeProfile>jboss-community-repository</activeProfile>
+  </activeProfiles>
+</settings>
+
+
