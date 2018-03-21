@@ -3,7 +3,7 @@ FROM fedora:27
 RUN dnf update -y \
     && groupadd --gid 995 jenkins \
     && groupadd --gid 1004 docker \
-    && dnf install -y java-1.8.0-openjdk-devel java-1.8.0-openjdk-headless \
+    && dnf install -y java-1.8.0-openjdk-devel-1.8.0.144 java-1.8.0-openjdk-headless-1.8.0.144 \
     && dnf install -y nano bzip2 unzip zip iproute wget python gcc-c++ \
     && dnf install -y docker \
     && dnf install -y nodejs git \
