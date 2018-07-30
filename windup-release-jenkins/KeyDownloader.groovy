@@ -93,14 +93,29 @@ class KeyDownloader {
     }
 
     static void main(String... args) throws IOException, GeneralSecurityException {
+        if (args.length < 1)
+        {
+            println("ERROR: file ID to download missing, please provide one as first argument of this command.");
+            System.exit(1);
+        }
+        String fileId = args[0];
+        
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
         final Credential credential = getCredentials(HTTP_TRANSPORT)
         Drive driveService = new Drive.Builder(HTTP_TRANSPORT, jsonFactory, credential)
                 .setApplicationName(APPLICATION_NAME)
                 .build();
 
-        String fileId = "1ve5JTxEqF60ll-CGf_Hnnf6l_5dYd_6Y";
-        OutputStream outputStream = new FileOutputStream("downloaded-RHAMT-private-key.asc")
+        String fileName = "";
+        if (args.length == 2)
+        {
+            fileName = args[1];
+        } else
+        {
+            fileName = driveService.files().get(fileId).execute().getName();
+        }
+
+        OutputStream outputStream = new FileOutputStream(fileName);
         driveService.files().get(fileId)
                 .executeMediaAndDownloadTo(outputStream);
     }
