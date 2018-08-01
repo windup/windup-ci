@@ -33,7 +33,7 @@ import java.util.List;
 @Grab('com.google.apis:google-api-services-drive:v3-rev110-1.23.0')
 @Grab('com.google.apis:google-api-services-oauth2:v2-rev139-1.23.0')
 
-class KeyDownloader {
+class GoogleDriveFileDownloader {
 
     // User id used to access Google services
     private static String USER_ID = "windupdocs@gmail.com"
