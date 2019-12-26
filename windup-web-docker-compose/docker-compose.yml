@@ -1,0 +1,50 @@
+version: '3'
+services:
+  db:
+    image: postgres:9.6-alpine
+    environment:
+      POSTGRES_USER: windup
+      POSTGRES_PASSWORD: password12345
+  adminer:
+    image: adminer:4.3.1
+    depends_on:
+      - db
+    ports:
+      - "4040:8080"
+  keycloak:
+    image: jboss/keycloak:3.1.0.Final
+    ports:
+      - "7070:8080"
+    environment:
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: password
+  windup-web:
+    build:
+      context: .
+      args:
+        DB_HOST: db
+        DB_USER: windup
+        DB_PASSWORD: password12345
+        DB_URI: db
+        DATA_DIR: "/var/windup"
+        KEYCLOAK_REALM_PUBLIC_KEY: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgmMfkT3fsuqRTnt17kPNGXm98Y//KxL+AeogTT5gS2mQkGWyLusP2WMbshc984Scyu/b7VoL7g/2Pq2Cm2TWi0+ffOryCJOz1NrLBqDqx/aGH9p337ZPWf5DiNxrhfxNxwF1002a+bp+3Lev1S+jZOjBI7emDBLR8iNu/xRbwbeCPiEwf4vM1vTJmgXBzA/efBzjfbTe7cjt8VSEPlOLZD29smmcpq8FayJSbPiqSIC1EfhA204nh3r/VzaBEcVQqsU1s51TT8724W3Z9DdSdFk3KNU/wc4nC8AXkZ6nFVT4RITwL5QsEuA2GIMDYtGaPk2OvxkcC4voCD9NBhUZSwIDAQAB"
+        KEYCLOAK_AUTH_URL: http://localhost:7070/auth
+    depends_on:
+      - db
+      - keycloak
+    ports:
+      - "8180:8080"
+      - "8787:8787"
+      - "9090:9090"
+    volumes:
+      - ./docker-volume:/var/windup
+      - ./startup-scripts:/docker-entrypoint-init.d:ro
+    environment:
+      DB_HOST: db
+      DB_USER: windup
+      DB_PASSWORD: password12345
+      DB_URI: db
+      DATA_DIR: "/var/windup"
+      KEYCLOAK_REALM_PUBLIC_KEY: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgmMfkT3fsuqRTnt17kPNGXm98Y//KxL+AeogTT5gS2mQkGWyLusP2WMbshc984Scyu/b7VoL7g/2Pq2Cm2TWi0+ffOryCJOz1NrLBqDqx/aGH9p337ZPWf5DiNxrhfxNxwF1002a+bp+3Lev1S+jZOjBI7emDBLR8iNu/xRbwbeCPiEwf4vM1vTJmgXBzA/efBzjfbTe7cjt8VSEPlOLZD29smmcpq8FayJSbPiqSIC1EfhA204nh3r/VzaBEcVQqsU1s51TT8724W3Z9DdSdFk3KNU/wc4nC8AXkZ6nFVT4RITwL5QsEuA2GIMDYtGaPk2OvxkcC4voCD9NBhUZSwIDAQAB"
+      KEYCLOAK_AUTH_URL: http://localhost:7070/auth
+      #http://keycloak/auth
